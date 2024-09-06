@@ -2,6 +2,7 @@ using AuctionService.Data;
 using AuctionService.DTOs;
 using AuctionService.Entities;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,23 +15,40 @@ namespace AuctionService.Controllers
         private readonly AuctionDbContext _dbContext;
         private readonly IMapper _mapper;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AuctionsController"/> class.
+        /// </summary>
+        /// <param name="dbContext"></param>
+        /// <param name="mapper"></param>
         public AuctionsController(AuctionDbContext dbContext, IMapper mapper)
         {
             _dbContext = dbContext;
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Gets all auctions in the database that have been updated after the specified date.
+        /// </summary>
+        /// <param name="date"></param>
+        /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<List<AuctionDTO>>> GetAllAuctions()
+        public async Task<ActionResult<List<AuctionDTO>>> GetAllAuctions(string date)
         {
-            var auctions = await _dbContext.Auctions
-                .Include(x => x.Item)
-                .OrderBy(x => x.Item.Make)
-                .ToListAsync();
+            var query = _dbContext.Auctions.OrderBy(x => x.Item.Make).AsQueryable();
 
-            return _mapper.Map<List<AuctionDTO>>(auctions);
+            if (!string.IsNullOrEmpty(date))
+            {
+                query = query.Where(x => x.UpdatedAt.CompareTo(DateTime.Parse(date).ToUniversalTime()) > 0);
+            }
+            
+            return await query.ProjectTo<AuctionDTO>(_mapper.ConfigurationProvider).ToListAsync();
         }
 
+        /// <summary>
+        /// Gets an auction by id.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<AuctionDTO>> GetAuctionById(Guid id)
         {
