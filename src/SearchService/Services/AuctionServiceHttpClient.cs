@@ -28,11 +28,11 @@ namespace SearchService.Services
         /// <returns>A list of items</returns>
         public async Task<List<Item>> GetItemsForSearchDb()
         {
-            // Gets the date of the last updated auction.
+            // Get the date of the last updated auction in the search mongo database.
             var lastUpdatedAuction = await DB.Find<Item, string>()
                 .Sort(item => item.Descending(x => x.UpdatedAt))
-                .Project(item => item.UpdatedAt.ToString())
-                .ExecuteFirstAsync();
+                .Project(item => item.UpdatedAt.ToString()) // Project the items in Mongo into a string, which is the UpdatedAt date as a string
+                .ExecuteFirstAsync(); // Execute the query in Mongo and get the first result as a string
 
             // Requests all items from the auction service that have been updated
             // since the last updated item in the search database.

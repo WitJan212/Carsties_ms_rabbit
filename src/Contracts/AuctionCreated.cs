@@ -1,22 +1,23 @@
-using MongoDB.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace SearchService.Models
+namespace Contracts
 {
-    /// <summary>
-    /// This class definition defines a data model for an Item entity, which inherits from the Entity class provided by the MongoDB.Entities library.
-    /// </summary>
-    public class Item : Entity
+    public class AuctionCreated
     {
+        public Guid Id { get; set; }
         public int ReservedPrice { get; set; }
 
         public string Seller { get; set; }
-        
+
         public string Winner { get; set; }
 
         public int SoldAmount { get; set; }
-        
+
         public int CurrentHighBid { get; set; }
-        
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
