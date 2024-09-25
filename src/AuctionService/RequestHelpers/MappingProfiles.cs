@@ -16,6 +16,9 @@ namespace AuctionService.RequestHelpers
                 .ForMember(d => d.Item, o => o.MapFrom(s => s));
 
             CreateMap<CreateAuctionDTO, Item>();
+
+            // Maps the CreateAuctionDTO to the Auction and Item entities for MassTransit exchange.
+            CreateMap<CreateAuctionDTO, Contracts.AuctionCreated>();
         }
     }
 }

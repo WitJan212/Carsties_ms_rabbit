@@ -3,6 +3,8 @@ using AuctionService.DTOs;
 using AuctionService.Entities;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Contracts;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,16 +16,24 @@ namespace AuctionService.Controllers
     {
         private readonly AuctionDbContext _dbContext;
         private readonly IMapper _mapper;
+        
+        // This is the MassTransit publish endpoint that we use to publish a message onto the message bus
+        // when an auction is created. This is used by the SearchService to create an index of all items
+        // available for auction and to keep this index up to date.
+        private readonly IPublishEndpoint _publishEndpoint;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AuctionsController"/> class.
+        /// Creates an instance of the AuctionsController.
         /// </summary>
-        /// <param name="dbContext"></param>
-        /// <param name="mapper"></param>
-        public AuctionsController(AuctionDbContext dbContext, IMapper mapper)
+        /// <param name="dbContext">The database context to use.</param>
+        /// <param name="mapper">The AutoMapper to use.</param>
+        /// <param name="publishEndpoint">The MassTransit publish endpoint to use.</param>
+        public AuctionsController(AuctionDbContext dbContext, IMapper mapper, IPublishEndpoint publishEndpoint)
         {
             _dbContext = dbContext;
             _mapper = mapper;
+            _publishEndpoint = publishEndpoint;
+
         }
 
         /// <summary>
@@ -72,6 +82,7 @@ namespace AuctionService.Controllers
             return _mapper.Map<AuctionDTO>(auction);
         }
 
+
         [HttpPost]
         public async Task<ActionResult<AuctionDTO>> CreateAuction(CreateAuctionDTO auctionDTO)
         {
@@ -80,10 +91,13 @@ namespace AuctionService.Controllers
             // Todo: Add current user as seller.
 
             auction.Seller = "testSeller";
-
             _dbContext.Auctions.Add(auction);
-
             var result = await _dbContext.SaveChangesAsync() > 0;
+            var newAuctionDto = _mapper.Map<AuctionDTO>(auction);
+
+            // Assume the service bus is running and the SearchService is running also...
+            // Publishing the created auction in the service bus.
+            await _publishEndpoint.Publish<AuctionCreated>(newAuctionDto);
 
             if (!result)
             {
@@ -94,7 +108,7 @@ namespace AuctionService.Controllers
             return CreatedAtAction(
                 nameof(GetAuctionById),
                 new { auction.Id },
-                _mapper.Map<AuctionDTO>(auction));
+                _mapper.Map<AuctionDTO>(newAuctionDto));
         }
 
         [HttpPut("{id}")]
