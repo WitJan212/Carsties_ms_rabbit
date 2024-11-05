@@ -1,0 +1,46 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using AutoMapper;
+using Contracts;
+using MassTransit;
+using MongoDB.Entities;
+using SearchService.Models;
+
+namespace SearchService.Consumers
+{
+    public class AuctionUpdatedConsumer : IConsumer<AuctionUpdated>
+    {
+        private readonly IMapper _mapper;
+
+        public AuctionUpdatedConsumer(IMapper mapper)
+        {
+            _mapper = mapper;
+        }
+
+        public async Task Consume(ConsumeContext<AuctionUpdated> context)
+        {
+            Console.WriteLine("---> Consuming message 'Update Auction' from Auction Service" + context.Message.Id);
+
+            var itemToModify = _mapper.Map<Item>(context.Message);
+
+            var result = await DB.Update<Item>()
+                .Match(item => item.ID == context.Message.Id)
+                .ModifyOnly(item => new
+                {
+                    item.Make,
+                    item.Model,
+                    item.Year,
+                    item.Mileage,
+                    item.Color,
+                }, itemToModify)
+                .ExecuteAsync();
+
+            if (!result.IsAcknowledged)
+            {
+                throw new MessageException(typeof(AuctionUpdated), $"--> {context.Message.Id} - Item not found in SearchService database. Cannot update mongo DB");
+            }
+        }
+    }
+}

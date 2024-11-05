@@ -12,13 +12,13 @@ namespace SearchService.Services
     /// </summary>
     public class AuctionServiceHttpClient
     {
-        private readonly HttpClient httpClient;
-        private readonly IConfiguration configuration;
+        private readonly HttpClient _httpClient;
+        private readonly IConfiguration _configuration;
         
         public AuctionServiceHttpClient(HttpClient httpClient, IConfiguration configuration)
         {
-            this.configuration = configuration;
-            this.httpClient = httpClient;
+            _configuration = configuration;
+            _httpClient = httpClient;
         }
 
         /// <summary>
@@ -36,7 +36,8 @@ namespace SearchService.Services
 
             // Requests all items from the auction service that have been updated
             // since the last updated item in the search database.
-            return await httpClient.GetFromJsonAsync<List<Item>>($"{configuration["AuctionServiceUrl"]}/api/auctions?date={lastUpdatedAuction}");
-        }
+            return await _httpClient.GetFromJsonAsync<List<Item>>(_configuration["AuctionServiceUrl"] 
+            + "/api/auctions?date=" + lastUpdatedAuction);
+			}
     }
 } 

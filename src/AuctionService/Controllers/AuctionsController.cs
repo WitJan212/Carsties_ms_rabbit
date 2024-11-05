@@ -89,15 +89,18 @@ namespace AuctionService.Controllers
             var auction = _mapper.Map<Auction>(auctionDTO);
 
             // Todo: Add current user as seller.
-
             auction.Seller = "testSeller";
+
+            // Add the item to the auction and publish in in one transaction...
             _dbContext.Auctions.Add(auction);
-            var result = await _dbContext.SaveChangesAsync() > 0;
             var newAuctionDto = _mapper.Map<AuctionDTO>(auction);
 
             // Assume the service bus is running and the SearchService is running also...
             // Publishing the created auction in the service bus.
             await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuctionDto));
+
+            var result = await _dbContext.SaveChangesAsync() > 0;
+           
 
             if (!result)
             {
@@ -130,6 +133,9 @@ namespace AuctionService.Controllers
             auction.Item.Mileage = auctionDTO.Mileage ?? auction.Item.Mileage;
             auction.Item.Year = auctionDTO.Year ?? auction.Item.Year;
 
+            // Publish on the MassTransit...
+            await _publishEndpoint.Publish(_mapper.Map<AuctionUpdated>(auction));
+
             var result = await _dbContext.SaveChangesAsync() > 0;
 
             if (result)
@@ -138,6 +144,32 @@ namespace AuctionService.Controllers
             }
 
             return BadRequest("Failed to update auction.");
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteAuction(Guid id)
+        {
+            var auction = await _dbContext.Auctions.FindAsync(id);
+
+                if (auction == null)
+                {
+                    Console.WriteLine("--> The desired auction ID not found to be deleted.");
+                    return NotFound();
+                }
+
+                _dbContext.Auctions.Remove(auction);
+
+                await _publishEndpoint.Publish<AuctionDeleted>(new { Id = auction.Id.ToString() });
+
+                var result = await _dbContext.SaveChangesAsync() > 0;
+
+                if (!result)
+                {
+                    return BadRequest("Failed to update auction.");
+                }
+
+                return Ok();
+               
         }
 
     }

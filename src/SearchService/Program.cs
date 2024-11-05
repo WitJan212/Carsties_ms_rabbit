@@ -11,7 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
 builder.Services.AddHttpClient<AuctionServiceHttpClient>().AddPolicyHandler(GetPolicy());
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // Adds MassTransit to the DI container. MassTransit is a message bus library
@@ -37,24 +39,31 @@ builder.Services.AddMassTransit(config =>
     // configure MassTransit to use a different assembly than the one that is currently
     // executing. The method takes an instance of IRegistrationContext as a parameter.
     config.AddConsumersFromNamespaceContaining<AuctionCreatedConsumer>();
-
     
     config.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("search", false));
 
     config.UsingRabbitMq((context, cfg) =>
     {
+        // Tries to connect to RabbitMQ and if it fails, it will retry defined times.
+        cfg.ReceiveEndpoint("search-auction-created", e =>
+        {
+            e.UseMessageRetry(retry => retry.Interval(5, TimeSpan.FromSeconds(5)));
+            e.ConfigureConsumer<AuctionCreatedConsumer>(context);
+        });
+
         cfg.ConfigureEndpoints(context);
     });
 });
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline.
 app.UseAuthorization();
 
 app.MapControllers();
 
 // Call InitializeDb when the application starts
-app.Lifetime.ApplicationStarted.Register(async ()=>
+app.Lifetime.ApplicationStarted.Register(async () =>
 {
     try
     {
@@ -63,7 +72,7 @@ app.Lifetime.ApplicationStarted.Register(async ()=>
     catch (System.Exception exception)
     {
         Console.WriteLine(exception);
-        throw;
+        
     }
 }); 
 
@@ -77,7 +86,6 @@ app.Run();
 /// The policy is configured to retry indefinitely with a 3 second delay between retries.
 /// It will retry on transient HTTP errors and on 404 responses.
 /// </remarks>
-/// <returns>The HTTP request policy.</returns>
 static IAsyncPolicy<HttpResponseMessage> GetPolicy()
     => HttpPolicyExtensions
         .HandleTransientHttpError()

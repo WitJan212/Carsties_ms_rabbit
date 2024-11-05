@@ -32,20 +32,21 @@ namespace SearchService.Models
                 .Key(x => x.Model, KeyType.Text)
                 .Key(x => x.Color, KeyType.Text)
                 .CreateAsync();
+				
+			var count = await DB.CountAsync<Item>();
 
             // Fetch all items from the Auction Service
             // This is done by using the AuctionSearchServiceHttpClient, which is a class that provides the synchronous communication with the auction service directly
             // We have to wait for the response - not very efficient!!!
             using var scope = app.Services.CreateScope();
-            var httpClient = scope.ServiceProvider.GetService<AuctionServiceHttpClient>();
+            var httpClient = scope.ServiceProvider.GetRequiredService<AuctionServiceHttpClient>();
             var items = await httpClient.GetItemsForSearchDb();
-
 
             if (items.Count > 0)
             {
                 // Save the items in the SearchDb database
                 await DB.SaveAsync(items);
-                Console.WriteLine($"Initialized database for SearchService from the Auction Service via synchronous http client => {items.Count} items obtained from the Auction.");
+                Console.WriteLine($"--> DbInitializer: Initialized database for SearchService from the Auction Service via synchronous http client => {items.Count} items obtained from the Auction.");
             }
         }
 

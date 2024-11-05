@@ -21,13 +21,18 @@ namespace SearchService.Consumers
 
         public async Task Consume(ConsumeContext<AuctionCreated> context)
         {
-            Console.WriteLine("---> Consuming message from Auction Service" + context.Message.Id);
+            Console.WriteLine("---> Consuming message 'Create Auction' from Auction Service" + context.Message.Id);
 
             // Create item from the message
             var item = _mapper.Map<Item>(context.Message);
 
+            if (item.Model == "Foo")
+            {
+                throw new ArgumentException("Cannot sell cars with name of Foo");
+            }
+
             // Saves the Item object to a mongo database asynchronously.
-            // Do not check if the item was saved successfully fro now.
+            // Do not check if the item was saved successfully for now.
             await item.SaveAsync();
         }
     }

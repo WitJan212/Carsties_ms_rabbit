@@ -20,6 +20,10 @@ namespace AuctionService.RequestHelpers
             // Maps the CreateAuctionDTO to the Auction and Item entities for MassTransit exchange.
             // AuctionCreated class is known for all the services.
             CreateMap<AuctionDTO, Contracts.AuctionCreated>();
+            CreateMap<Item, Contracts.AuctionUpdated>();
+            CreateMap<Auction, Contracts.AuctionUpdated>().IncludeMembers(a => a.Item);
+          
+
         }
     }
 }
