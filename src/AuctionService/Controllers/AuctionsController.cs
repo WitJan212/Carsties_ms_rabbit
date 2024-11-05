@@ -97,7 +97,7 @@ namespace AuctionService.Controllers
 
             // Assume the service bus is running and the SearchService is running also...
             // Publishing the created auction in the service bus.
-            await _publishEndpoint.Publish<AuctionCreated>(newAuctionDto);
+            await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuctionDto));
 
             if (!result)
             {
@@ -108,7 +108,7 @@ namespace AuctionService.Controllers
             return CreatedAtAction(
                 nameof(GetAuctionById),
                 new { auction.Id },
-                _mapper.Map<AuctionDTO>(newAuctionDto));
+                newAuctionDto);
         }
 
         [HttpPut("{id}")]
