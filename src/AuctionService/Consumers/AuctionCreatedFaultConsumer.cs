@@ -7,7 +7,7 @@ public class AuctionCreatedFaultConsumer : IConsumer<Fault<AuctionCreated>>
 {
     public async Task Consume(ConsumeContext<Fault<AuctionCreated>> context)
     {
-        Console.WriteLine("---> Consuming faulty creation from Auction Service");
+        Console.WriteLine("---> [AuctionService] - Consuming faulty creation from Auction Service");
 
         var exception = context.Message.Exceptions.First();
 

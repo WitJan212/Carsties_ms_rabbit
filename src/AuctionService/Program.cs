@@ -31,7 +31,9 @@ builder.Services.AddMassTransit(config =>
     });
 
     // Register the AuctionCreatedFaultConsumer and set the end point formatter for it.
+    // AuctionCreatedFaultConsumer consumes some throw exceptions from the AuctionCreatedConsumer.
     config.AddConsumersFromNamespaceContaining<AuctionCreatedFaultConsumer>();
+
     config.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("auction", false));
 
     config.UsingRabbitMq((context, cfg) =>

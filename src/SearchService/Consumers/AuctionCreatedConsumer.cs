@@ -21,7 +21,7 @@ namespace SearchService.Consumers
 
         public async Task Consume(ConsumeContext<AuctionCreated> context)
         {
-            Console.WriteLine("---> Consuming message 'Create Auction' from Auction Service" + context.Message.Id);
+            Console.WriteLine("---> [Search service] - Consuming message 'Create Auction' from Auction Service" + context.Message.Id);
 
             // Create item from the message
             var item = _mapper.Map<Item>(context.Message);

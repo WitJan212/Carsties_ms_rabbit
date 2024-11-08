@@ -47,6 +47,9 @@ builder.Services.AddMassTransit(config =>
         // Tries to connect to RabbitMQ and if it fails, it will retry defined times.
         cfg.ReceiveEndpoint("search-auction-created", e =>
         {
+            // Will try to consume it for 5 times spanned by 5 seconds
+            // Even if there is some exception.
+            // The argument exception will be handled by the AuctionCreatedFaultConsumer.
             e.UseMessageRetry(retry => retry.Interval(5, TimeSpan.FromSeconds(5)));
             e.ConfigureConsumer<AuctionCreatedConsumer>(context);
         });
