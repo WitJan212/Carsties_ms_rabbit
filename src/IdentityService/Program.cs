@@ -25,6 +25,8 @@ try
     // every time check the seeding the data...
     SeedData.EnsureSeedData(app);
 
+   
+
     app.Run();
 }
 catch (Exception ex) when (ex is not HostAbortedException)
